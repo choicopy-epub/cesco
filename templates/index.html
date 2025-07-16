@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>케어 솔루션</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4" href="/">케어 솔루션</a>
+            <div class="ms-auto">
+                <a href="/contact" class="btn btn-primary">빠른 상담 신청</a>
+            </div>
+        </div>
+    </nav>
+
+    <header id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="/static/images/main-banner-1.jpg" class="d-block w-100" alt="케어 솔루션 메인 배너 1">
+            </div>
+            <div class="carousel-item">
+                <img src="/static/images/main-banner-2.jpg" class="d-block w-100" alt="케어 솔루션 제품 배너">
+            </div>
+        </div>
+    </header>
+
+    <main class="container my-5">
+        <section class="py-5 text-center">
+            <h2 class="fw-bold">실시간 상담 현황</h2>
+            <div id="live-status-list" class="list-group list-group-flush w-75 mx-auto">
+                {% for item in consultations %}
+                <div class="list-group-item">
+                    {{ item['name'][0] }}*{{ item['name'][-1] }}님 
+                    ({{ item.masked_address }} / {{ item.formatted_date }})
+                    - 
+                    {{ item['product'] }} 상담 신청 완료
+                </div>
+                {% else %}
+                <div class="list-group-item">아직 접수된 상담 신청이 없습니다.</div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="py-5">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">케어 솔루션 제품</h2>
+            </div>
+            <ul id="category-menu" class="nav nav-pills justify-content-center mb-5">
+                {% for key, value in categories.items() %}
+                <li class="nav-item"><a class="nav-link filter-btn {% if key == 'all' %}active{% endif %}" href="#" data-filter="{{ key }}">{{ value }}</a></li>
+                {% endfor %}
+            </ul>
+            <div class="row g-4 product-list">
+                {% for product in products %}
+                <div class="col-md-4 product-item" data-category="{{ product.category }}">
+                    
+                    <a href="{{ url_for('product_detail', product_id=product.id) }}" class="text-decoration-none text-dark">
+                        <div class="card h-100">
+                            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+                            <div class="card-body text-center">
+                                <h5 class="card-title fw-bold">{{ product.name }}</h5>
+                                <div class="price mt-2">
+                                    {% if product.price > 0 %}
+                                    <small>월</small> {{ "{:,.0f}".format(product.price) }}<small>원</small>
+                                    {% else %}
+                                    <span class="text-primary fw-bold">별도 문의</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+            
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-4 mt-5 border-top bg-light">
+        <p class="text-muted mb-0">© 2024 케어 솔루션</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/script.js"></script>
+</body>
+</html>
