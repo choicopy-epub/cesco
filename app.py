@@ -3,17 +3,17 @@ from flask import Flask, render_template, request, jsonify, abort
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
-# 제품 및 카테고리 데이터 정의
+# [수정됨] 모든 제품에 정가(original_price) 값을 부여
 products_data = [
-    {'id': 1, 'name': '해충 방제 솔루션', 'price': 0, 'description': '가정/사업장 맞춤 방제 플랜 상담', 'image_url': '/static/images/product-ipm.jpg', 'category': 'ipm'},
-    {'id': 2, 'name': '바이러스케어 솔루션', 'price': 0, 'description': '공간 살균 및 유해세균 제어 상담', 'image_url': '/static/images/product-ipm-2.jpg', 'category': 'ipm'},
-    {'id': 3, 'name': '에어퍼퓸', 'price': 48900, 'description': '공간을 채우는 프리미엄 향기', 'image_url': '/static/images/product-perfume.jpg', 'category': 'air_perfume'},
-    {'id': 4, 'name': '케어 공기살균기', 'price': 39900, 'description': '바이러스와 세균을 한번에 제거', 'image_url': '/static/images/product-sterilizer.jpg', 'category': 'air_purifier'},
-    {'id': 5, 'name': '케어 공기청정기', 'price': 43900, 'description': '360도 강력한 청정 효과', 'image_url': '/static/images/product-air-purifier.jpg', 'category': 'air_purifier'},
-    {'id': 6, 'name': '살균온 정수기', 'price': 25900, 'description': '컴팩트한 디자인, 스마트한 기능', 'image_url': '/static/images/product-water-purifier-1.jpg', 'category': 'water_purifier'},
-    {'id': 7, 'name': '업소용 스탠드 정수기', 'price': 33900, 'description': '넉넉한 용량의 비즈니스 솔루션', 'image_url': '/static/images/product-water-purifier-2.jpg', 'category': 'water_purifier'},
-    {'id': 8, 'name': '스마트 비데', 'price': 15900, 'description': '위생적인 스테인리스 노즐', 'image_url': '/static/images/product-bidet.jpg', 'category': 'bidet'},
-    {'id': 9, 'name': '마이랩 친환경 주방세제', 'price': 9900, 'description': '자연 유래 성분으로 안심 설거지', 'image_url': '/static/images/product-mylab.jpg', 'category': 'mylab'},
+    {'id': 1, 'name': '해충 방제 솔루션', 'original_price': 0, 'price': 0, 'description': '가정/사업장 맞춤 방제 플랜 상담', 'image_url': '/static/images/product-ipm.jpg', 'category': 'ipm'},
+    {'id': 2, 'name': '바이러스케어 솔루션', 'original_price': 0, 'price': 0, 'description': '공간 살균 및 유해세균 제어 상담', 'image_url': '/static/images/product-ipm-2.jpg', 'category': 'ipm'},
+    {'id': 3, 'name': '에어퍼퓸 디퓨저', 'original_price': 18900, 'price': 15900, 'description': '공간을 채우는 프리미엄 향기', 'image_url': '/static/images/product-perfume.jpg', 'category': 'air_perfume'},
+    {'id': 4, 'name': 'UV파워 공기살균기', 'original_price': 29900, 'price': 25900, 'description': '바이러스와 세균을 한번에 제거', 'image_url': '/static/images/product-sterilizer.jpg', 'category': 'air_purifier'},
+    {'id': 5, 'name': '케어 공기청정기', 'original_price': 24900, 'price': 19900, 'description': '360도 강력한 청정 효과', 'image_url': '/static/images/product-air-purifier.jpg', 'category': 'air_purifier'},
+    {'id': 6, 'name': '아이콘 정수기 II', 'original_price': 32900, 'price': 29900, 'description': '컴팩트한 디자인, 스마트한 기능', 'image_url': '/static/images/product-water-purifier-1.jpg', 'category': 'water_purifier'},
+    {'id': 7, 'name': '업소용 스탠드 정수기', 'original_price': 38900, 'price': 33900, 'description': '넉넉한 용량의 비즈니스 솔루션', 'image_url': '/static/images/product-water-purifier-2.jpg', 'category': 'water_purifier'},
+    {'id': 8, 'name': '스마트 비데', 'original_price': 19900, 'price': 15900, 'description': '위생적인 스테인리스 노즐', 'image_url': '/static/images/product-bidet.jpg', 'category': 'bidet'},
+    {'id': 9, 'name': '마이랩 친환경 주방세제', 'original_price': 12900, 'price': 9900, 'description': '자연 유래 성분으로 안심 설거지', 'image_url': '/static/images/product-mylab.jpg', 'category': 'mylab'},
 ]
 
 categories_info = {
@@ -39,7 +39,7 @@ def home():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row 
     cur = conn.cursor()
-    cur.execute("SELECT * FROM consultations ORDER BY created_at DESC LIMIT 5")
+    cur.execute("SELECT * FROM consultations ORDER BY created_at DESC LIMIT 7")
     raw_consultations = cur.fetchall()
     conn.close()
 
@@ -52,20 +52,11 @@ def home():
 
     return render_template('index.html', consultations=processed_consultations, products=products_data, categories=categories_info)
 
-# app.py
-
-# ... home() 함수 아래에 추가 ...
-
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
-    # products_data 리스트에서 id가 일치하는 제품을 찾습니다.
     product = next((p for p in products_data if p['id'] == product_id), None)
-    
-    # 만약 제품을 찾지 못하면 404 Not Found 에러를 표시합니다.
     if product is None:
         abort(404)
-        
-    # product-detail.html을 보여줄 때, 찾은 제품 정보를 함께 전달합니다.
     return render_template('product-detail.html', product=product)
 
 @app.route('/contact')

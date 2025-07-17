@@ -3,116 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>라이프 케어 솔루션</title>
+    <title>케어 솔루션</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    
     <style>
-        :root {
-            --bs-primary: #00a79d;
-            --bs-primary-rgb: 0, 167, 157;
-        }
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #fff;
-        }
-        .btn-primary {
-            --bs-btn-bg: var(--bs-primary);
-            --bs-btn-border-color: var(--bs-primary);
-            --bs-btn-hover-bg: #007a72;
-            --bs-btn-hover-border-color: #007a72;
-        }
-
-        /* --- [수정됨] 카드 전체를 정사각형으로 만드는 핵심 코드 --- */
-        .product-card {
-            border: 1px solid #eee;
-            transition: all 0.3s ease;
-            aspect-ratio: 1 / 1; /* 카드 자체의 가로:세로 비율을 1:1로 고정 */
-            display: flex;       /* 카드 내부 요소를 정렬하기 위해 flexbox 사용 */
-            flex-direction: column; /* 아이템을 세로로 쌓음 */
-        }
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-        }
-        .product-card .card-img-wrapper {
-            height: 60%; /* 카드 높이의 60%를 이미지 영역으로 할당 */
-        }
-        .product-card .card-img-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* 이미지가 영역에 맞춰 잘리도록 설정 */
-        }
-        .product-card .card-body {
-            flex-grow: 1; /* 남은 공간을 모두 차지하도록 설정 */
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* 내용을 세로 중앙 정렬 */
-            padding: 1rem;
-        }
-        .product-card .price {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--bs-primary);
-        }
-        .product-card .price small {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #666;
-        }
+        :root { --bs-primary: #00a79d; --bs-primary-rgb: 0, 167, 157; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #fff; }
+        .product-card { border: 1px solid #eee; transition: all 0.3s ease; aspect-ratio: 1 / 1; display: flex; flex-direction: column; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+        .product-card .card-img-wrapper { height: 60%; }
+        .product-card .card-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .product-card .card-body { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; padding: 1rem; }
+        .product-card .price-section strong { font-size: 1.25rem; font-weight: 700; color: var(--bs-primary); }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-4" href="/">라이프 케어 솔루션</a>
-            <div class="ms-auto">
-                <a href="/contact" class="btn btn-primary">빠른 상담 신청</a>
-            </div>
+            <a class="navbar-brand fw-bold fs-4" href="/">케어 솔루션</a>
+            <div class="ms-auto"><a href="/contact" class="btn btn-primary">빠른 상담 신청</a></div>
         </div>
     </nav>
-
     <header id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner">
             <div class="carousel-item active"><img src="/static/images/main-banner-1.jpg" class="d-block w-100" alt="케어 솔루션 메인 배너 1"></div>
             <div class="carousel-item"><img src="/static/images/main-banner-2.jpg" class="d-block w-100" alt="케어 솔루션 제품 배너"></div>
         </div>
     </header>
-
     <main class="container my-5">
         <section class="py-5 text-center">
             <h2 class="fw-bold">실시간 상담 현황</h2>
             <div id="live-status-list" class="list-group list-group-flush w-75 mx-auto">
                 {% for item in consultations %}
-                <div class="list-group-item">{{ item['name'][0] }}*{{ item['name'][-1] }}님 ({{ item.masked_address }}) - {{ item['product'] }} 상담 신청 완료</div>
+                <div class="list-group-item">{{ item['name'][0] }}*{{ item['name'][-1] }}님 ({{ item.masked_address }} / {{ item.formatted_date }}) - {{ item['product'] }} 상담 신청 완료</div>
+                {% else %}
+                <div class="list-group-item">아직 접수된 상담 신청이 없습니다.</div>
                 {% endfor %}
             </div>
         </section>
-
         <section class="py-5">
-            <div class="text-center mb-5">
-                <h2 class="fw-bold">케어 솔루션 제품</h2>
-            </div>
+            <div class="text-center mb-5"><h2 class="fw-bold">케어 솔루션 제품</h2></div>
             <ul id="category-menu" class="nav nav-pills justify-content-center mb-5">
-                {% for key, value in categories.items() %}
-                <li class="nav-item"><a class="nav-link filter-btn {% if key == 'all' %}active{% endif %}" href="#" data-filter="{{ key }}">{{ value }}</a></li>
-                {% endfor %}
+                {% for key, value in categories.items() %}<li class="nav-item"><a class="nav-link filter-btn {% if key == 'all' %}active{% endif %}" href="#" data-filter="{{ key }}">{{ value }}</a></li>{% endfor %}
             </ul>
             <div class="row g-4 product-list">
                 {% for product in products %}
                 <div class="col-md-4 product-item" data-category="{{ product.category }}">
                     <a href="{{ url_for('product_detail', product_id=product.id) }}" class="text-decoration-none text-dark">
                         <div class="card product-card">
-                            <div class="card-img-wrapper">
-                                <img src="{{ product.image_url }}" alt="{{ product.name }}">
-                            </div>
+                            <div class="card-img-wrapper"><img src="{{ product.image_url }}" alt="{{ product.name }}"></div>
                             <div class="card-body text-center">
                                 <h5 class="card-title fw-bold">{{ product.name }}</h5>
-                                <div class="price mt-2">
+                                <div class="price-section mt-2">
                                     {% if product.price > 0 %}
-                                    <small>월</small> {{ "{:,.0f}".format(product.price) }}<small>원</small>
+                                        {% if product.original_price %}
+                                        <span class="text-muted text-decoration-line-through me-2">{{ "{:,.0f}".format(product.original_price) }}원</span>
+                                        {% endif %}
+                                        <strong class="text-primary fs-5">월 {{ "{:,.0f}".format(product.price) }}원</strong>
                                     {% else %}
-                                    <span class="text-primary fw-bold">별도 문의</span>
+                                        <strong class="text-primary fs-5">별도 문의</strong>
                                     {% endif %}
                                 </div>
                             </div>
@@ -123,11 +72,7 @@
             </div>
         </section>
     </main>
-
-    <footer class="text-center py-4 mt-5 border-top bg-light">
-        <p class="text-muted mb-0">© 2024 (주) 라이프 케어 솔루션</p>
-    </footer>
-
+    <footer class="text-center py-4 mt-5 border-top bg-light"><p class="text-muted mb-0">© 2024 케어 솔루션</p></footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/script.js"></script>
 </body>
