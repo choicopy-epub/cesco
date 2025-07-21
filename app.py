@@ -114,6 +114,7 @@ def submit_consultation():
 # 로컬 테스트 시에는 init_db()가 필요할 수 있습니다.
 # init_db() 
 
+# [수정됨] Render 서버에서는 gunicorn으로 직접 실행하므로 이 부분은 로컬 테스트용으로만 사용합니다.
+# init_db() 호출을 완전히 제거합니다.
 if __name__ == '__main__':
-    # init_db() # 테이블은 한 번만 만들면 되므로, 다음 배포부터는 주석 처리합니다.
     app.run(debug=True)
