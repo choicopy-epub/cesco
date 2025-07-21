@@ -89,9 +89,9 @@ def submit_consultation():
     
     # 1. 메일 발송 시도
     try:
-        sender_email = os.environ.get('SENDER_EMAIL')
-        sender_password = os.environ.get('SENDER_PASSWORD')
-        receiver_email = os.environ.get('RECEIVER_EMAIL')
+        sender_email = os.environ.get('cescohyun@gmail.com')
+        sender_password = os.environ.get('@HSld240486')
+        receiver_email = os.environ.get('cescohyun@gmail.com')
         
         subject = f"[케어 솔루션] 새로운 상담 신청: {data.get('name')}님"
         body = f"이름: {data.get('name')}\n연락처: {data.get('phone')}\n주소: {data.get('address')}\n관심 제품: {data.get('product')}"
