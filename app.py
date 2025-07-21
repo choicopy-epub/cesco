@@ -1,10 +1,11 @@
 import os
-import psycopg2 # sqlite3 대신 psycopg2를 사용합니다.
+import smtplib
+from email.mime.text import MIMEText
 from flask import Flask, render_template, request, jsonify, abort
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
-# 사용자님이 업데이트한 제품 및 카테고리 데이터
+# 최종 제품 및 카테고리 데이터
 products_data = [
     {'id': 1, 'name': '해충 방제 솔루션', 'original_price': 0, 'price': 0, 'description': '가정/사업장 맞춤 방제 플랜 상담', 'image_url': '/static/images/product-ipm.jpg', 'category': 'ipm'},
     {'id': 2, 'name': '바이러스케어 솔루션', 'original_price': 0, 'price': 0, 'description': '공간 살균 및 유해세균 제어 상담', 'image_url': '/static/images/product-ipm-2.jpg', 'category': 'ipm'},
@@ -27,31 +28,6 @@ categories_info = {
     'bidet': '비데', 'air_curtain': '에어커튼'
 }
 
-# [수정됨] 데이터베이스 연결을 위한 함수
-def get_db_connection():
-    conn_str = os.environ.get('DATABASE_URL')
-    conn = psycopg2.connect(conn_str)
-    return conn
-
-# [수정됨] PostgreSQL에 맞게 테이블 초기화 함수 수정
-def init_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS consultations (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            phone VARCHAR(100) NOT NULL,
-            address VARCHAR(255) NOT NULL,
-            product VARCHAR(100) NOT NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
-    conn.commit()
-    cur.close()
-    conn.close()
-    print("Table 'consultations' initialized successfully.")
-
 @app.after_request
 def add_header(response):
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
@@ -61,24 +37,31 @@ def add_header(response):
 
 @app.route('/')
 def home():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM consultations ORDER BY created_at DESC LIMIT 7")
-    rows = cur.fetchall()
-    columns = [desc[0] for desc in cur.description]
-    raw_consultations = [dict(zip(columns, row)) for row in rows]
-    cur.close()
-    conn.close()
+    # 실시간 현황은 임시 데이터(DB 대신)로 보여줍니다.
+    temp_consultations = [
+        {'name': '홍길동', 'address': '서울시 종로구', 'created_at': '2025-07-21', 'product': '해충 방제 솔루션'},
+        {'name': '김영희', 'address': '경기도 성남시 분당구', 'created_at': '2025-07-21', 'product': '아이콘 정수기 II'},
+    ]
 
     processed_consultations = []
-    for item in raw_consultations:
+    for item in temp_consultations:
         processed_item = dict(item)
-        processed_item['masked_address'] = item['address'].split(' ')[0]
-        processed_item['formatted_date'] = item['created_at'].strftime('%Y-%m-%d')
+        
+        name = item.get('name', '')
+        address = item.get('address', '')
+        
+        if name:
+            processed_item['masked_name'] = name[0] + '**'
+        else:
+            processed_item['masked_name'] = '***'
+
+        processed_item['masked_address'] = address[:3]
+        processed_item['formatted_date'] = item['created_at'][:10]
         processed_consultations.append(processed_item)
 
     return render_template('index.html', consultations=processed_consultations, products=products_data, categories=categories_info)
 
+# [추가됨] 누락되었던 제품 상세 페이지 경로
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     product = next((p for p in products_data if p['id'] == product_id), None)
@@ -88,33 +71,40 @@ def product_detail(product_id):
 
 @app.route('/contact')
 def contact():
-    # 'Mylab'이 'air_curtain'으로 바뀌었으므로, 이제 상담신청에서 제외할 카테고리가 없습니다.
-    # 만약 에어커튼도 제외하려면 if k not in ['all', 'air_curtain'] 을 유지하세요.
     contact_categories = {k: v for k, v in categories_info.items() if k != 'all'}
     return render_template('contact.html', categories=contact_categories)
 
+# [수정됨] DB 저장 대신 메일 발송
 @app.route('/submit-consultation', methods=['POST'])
 def submit_consultation():
     data = request.get_json()
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO consultations (name, phone, address, product) VALUES (%s, %s, %s, %s)",
-                    (data['name'], data['phone'], data['address'], data['product']))
-        conn.commit()
-        cur.close()
-        conn.close()
+        sender_email = os.environ.get('cescohyun@gmail.com')
+        sender_password = os.environ.get('@HSld240486')
+        receiver_email = os.environ.get('cescohyun@gmail.com')
+
+        subject = f"[케어 솔루션] 새로운 상담 신청: {data.get('name')}님"
+        body = f"""
+        새로운 상담 신청이 접수되었습니다.
+        - 이름: {data.get('name')}
+        - 연락처: {data.get('phone')}
+        - 주소: {data.get('address')}
+        - 관심 제품: {data.get('product')}
+        """
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['Subject'] = subject
+        
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, receiver_email, msg.as_string())
+        
+        print(f"메일 발송 성공: {data.get('name')}님")
     except Exception as e:
-        print(f"Database Error: {e}")
-        return jsonify({'result': 'error', 'message': '데이터 저장 중 오류가 발생했습니다.'}), 500
+        print(f"Mail Error: {e}")
+        return jsonify({'result': 'error', 'message': '신청 접수 중 오류가 발생했습니다.'}), 500
     
     return jsonify({'result': 'success', 'message': '상담 신청이 성공적으로 접수되었습니다.'})
 
-# Render 서버에서는 이 부분이 직접 실행되지 않으므로, init_db()를 맨 아래에서 위로 옮겼습니다.
-# 로컬 테스트 시에는 init_db()가 필요할 수 있습니다.
-# init_db() 
-
-# [수정됨] Render 서버에서는 gunicorn으로 직접 실행하므로 이 부분은 로컬 테스트용으로만 사용합니다.
-# init_db() 호출을 완전히 제거합니다.
 if __name__ == '__main__':
     app.run(debug=True)
