@@ -22,7 +22,6 @@ products_data = [
 ]
 categories_info = { 'all': '전체보기', 'ipm': 'IPM(해충방제)', 'air_perfume': '방향/세정/건조기', 'air_purifier': '공기살균기/청정기', 'water_purifier': '정수기', 'bidet': '비데', 'air_curtain': '에어커튼' }
 
-# --- 데이터베이스 연결 함수 ---
 def get_db_connection():
     conn_str = os.environ.get('DATABASE_URL')
     if conn_str is None:
@@ -30,7 +29,13 @@ def get_db_connection():
     conn = psycopg2.connect(conn_str)
     return conn
 
-# --- 페이지 경로(라우트) 설정 ---
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 @app.route('/')
 def home():
     processed_consultations = []
@@ -50,7 +55,6 @@ def home():
             processed_consultations.append(processed_item)
     except Exception as e:
         print(f"Home DB Error: {e}")
-
     return render_template('index.html', consultations=processed_consultations, products=products_data, categories=categories_info)
 
 @app.route('/product/<int:product_id>')
@@ -81,6 +85,5 @@ def submit_consultation():
         return jsonify({'result': 'error', 'message': '데이터 저장 중 오류가 발생했습니다.'}), 500
     return jsonify({'result': 'success', 'message': '상담 신청이 성공적으로 접수되었습니다.'})
 
-# --- 서버 실행 (로컬 테스트용) ---
 if __name__ == '__main__':
     app.run(debug=True)
