@@ -115,6 +115,5 @@ def submit_consultation():
 # init_db() 
 
 if __name__ == '__main__':
-    # 로컬에서 실행할 때만 DB를 초기화하려면 이 안에 init_db()를 넣는 것이 좋습니다.
-    init_db()
+    # init_db() # 테이블은 한 번만 만들면 되므로, 다음 배포부터는 주석 처리합니다.
     app.run(debug=True)
