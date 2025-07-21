@@ -25,6 +25,13 @@ products_data = [
 ]
 categories_info = { 'all': '전체보기', 'ipm': 'IPM(해충방제)', 'air_perfume': '방향/세정/건조기', 'air_purifier': '공기살균기/청정기', 'water_purifier': '정수기', 'bidet': '비데', 'air_curtain': '에어커튼' }
 
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 # --- 데이터베이스 연결 함수 ---
 def get_db_connection():
     conn_str = os.environ.get('DATABASE_URL')
@@ -56,6 +63,25 @@ def home():
         print(f"Home DB Error: {e}")
 
     return render_template('index.html', consultations=processed_consultations, products=products_data, categories=categories_info)
+
+@app.route('/product/<int:product_id>')
+def product_detail(product_id):
+    # products_data 리스트에서 id가 일치하는 제품을 찾습니다.
+    product = next((p for p in products_data if p['id'] == product_id), None)
+    
+    # 만약 제품을 찾지 못하면 404 Not Found 에러를 표시합니다.
+    if product is None:
+        abort(404)
+        
+    # product-detail.html을 보여줄 때, 찾은 제품 정보를 함께 전달합니다.
+    return render_template('product-detail.html', product=product)
+
+@app.route('/contact')
+def contact():
+    # 'Mylab'이 'air_curtain'으로 바뀌었으므로, 이제 상담신청에서 제외할 카테고리가 없습니다.
+    # 만약 에어커튼도 제외하려면 if k not in ['all', 'air_curtain'] 을 유지하세요.
+    contact_categories = {k: v for k, v in categories_info.items() if k != 'all'}
+    return render_template('contact.html', categories=contact_categories)
 
 @app.route('/submit-consultation', methods=['POST'])
 def submit_consultation():
